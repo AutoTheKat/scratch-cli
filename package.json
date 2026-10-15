@@ -1,0 +1,27 @@
+{
+  "name": "scratch-cli",
+  "version": "0.0.0",
+  "description": "Run Scratch projects in your terminal.",
+  "keywords": [
+    "scratch",
+    "turbowarp"
+  ],
+  "license": "MIT",
+  "author": "LordCat0",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsx src/index.ts"
+  },
+  "devDependencies": {
+    "@turbowarp/types": "^0.0.15",
+    "@types/jsdom": "^30.0.0",
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "bin": {
+    "scratch-cli": "./dist/index.js"
+  }
+}
