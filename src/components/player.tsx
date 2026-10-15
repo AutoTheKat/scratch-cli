@@ -7,7 +7,7 @@ interface PlayerProps {
   scaffolding: Scaffolding
 }
 
-export function Player(props: PlayerProps) {
+export default function Player(props: PlayerProps) {
   const [imageBuffer, setImageBuffer] = useState<Buffer | null>(null);
 
   const canvas = props.scaffolding.vm.runtime.renderer.canvas as unknown as HTMLCanvasElement;
@@ -26,7 +26,7 @@ export function Player(props: PlayerProps) {
     return () => {
       run = false;
     }
-  }, []);
+  }, [canvas]);
 
   if (!imageBuffer) {
     return <></>;
