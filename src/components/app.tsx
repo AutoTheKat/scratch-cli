@@ -10,6 +10,7 @@ import { join } from 'node:path';
 export default function App() {
   const [scaffolding] = useState(() => new Scaffolding());
   const [loaded, setLoaded] = useState(false);
+  const [percent, setPercent] = useState(0);
   const { columns, rows } = useWindowSize();
 
   useEffect(() => {
@@ -19,7 +20,17 @@ export default function App() {
       const buffer = await readFile(path);
 
       scaffolding.setup();
-      await scaffolding.loadProject(buffer);
+      const onProgress = (finished: number, total: number) => {
+        setPercent(total > 0 ? Math.round(finished / total * 100) : 0);
+      };
+
+      scaffolding.vm.on('ASSET_PROGRESS', onProgress);
+      try {
+        await scaffolding.loadProject(buffer);
+      } finally {
+        scaffolding.vm.off('ASSET_PROGRESS', onProgress);
+      }
+      setPercent(100);
       scaffolding.start();
 
       setLoaded(true);
@@ -35,7 +46,7 @@ export default function App() {
       {loaded ? (
         <Player scaffolding={scaffolding} />
       ) : (
-        <Loading />
+        <Loading percent={percent} />
       )}
     </Box>
   );
