@@ -20,7 +20,13 @@ export default function App() {
   useEffect(() => {
     const projectWorker = new Worker(new URL(workerPath, import.meta.url), {
       workerData: resolve(process.argv[2]),
+      stdout: true,
+      stderr: true,
     });
+
+    // Keep the workers logs from writing over Ink's output.
+    projectWorker.stdout.resume();
+    projectWorker.stderr.resume();
 
     projectWorker.on('message', (message: ProjectMessage) => {
       if (message.type === 'progress') {
