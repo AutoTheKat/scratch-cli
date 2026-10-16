@@ -28,8 +28,10 @@ export default function Loading(props: LoadingProps) {
         justifyContent='center'
         alignItems='center'
       >
-        <Text bold>Loading project</Text>
-        <Spinner />
+        <Box gap={1} alignItems='center'>
+          <Text bold>Loading project</Text>
+          <Spinner />
+        </Box>
         <Box width='60%' marginY={1}>
           <ProgressBar value={props.percent} />
         </Box>
