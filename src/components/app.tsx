@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, useWindowSize } from 'ink';
 import Player from './player.tsx';
 import Loading from './loading.tsx';
@@ -28,11 +28,32 @@ export default function App() {
     projectWorker.stdout.resume();
     projectWorker.stderr.resume();
 
+    let ready = false;
+    let pending = false;
+    const requestFrame = () => {
+      if (ready && !pending) {
+        pending = true;
+        projectWorker.postMessage('frame');
+      }
+    };
+    const frameTimer = setInterval(requestFrame, 1000 / 30);
+
     projectWorker.on('message', (message: ProjectMessage) => {
       if (message.type === 'progress') {
         setPercent(message.percent);
+      } else if (message.type === 'ready') {
+        ready = true;
+        requestFrame();
+      } else if (message.type === 'frame') {
+        pending = false;
+        const buffer = Buffer.from(
+          message.buffer.buffer,
+          message.buffer.byteOffset,
+          message.buffer.byteLength
+        );
+        setImageBuffer(buffer);
       } else {
-        setImageBuffer(Buffer.from(message.buffer));
+        pending = false;
       }
     });
     projectWorker.on('error', setError);
@@ -41,6 +62,7 @@ export default function App() {
     });
 
     return () => {
+      clearInterval(frameTimer);
       projectWorker.removeAllListeners('message');
       projectWorker.removeAllListeners('exit');
       // Let the worker exit between tasks.

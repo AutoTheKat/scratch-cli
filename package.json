@@ -12,6 +12,7 @@
   "main": "src/index.js",
   "scripts": {
     "build": "tsc",
+    "test": "npm run build && node --import tsx --test tests/*.test.ts",
     "start": "tsx src/index.tsx"
   },
   "devDependencies": {
@@ -31,6 +32,7 @@
     "ink-picture": "^2.1.0",
     "jsdom": "^30.1.3",
     "react": "^19.3.1",
+    "sixel": "^0.16.0",
     "svgdom": "^0.1.29",
     "xterm-mouse": "^1.0.0"
   },
