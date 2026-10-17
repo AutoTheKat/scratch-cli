@@ -31,6 +31,17 @@ port.on('message', message => {
   if (message === 'frame') {
     renderFrame();
   }
+  if (message?.type === 'mouse') {
+    const canvas = scaffolding.vm.runtime.renderer.canvas;
+    const data = message.data;
+    scaffolding.vm.postIOData('mouse', {
+      ...data,
+      x: data.x * canvas.width / data.canvasWidth,
+      y: data.y * canvas.height / data.canvasHeight,
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height,
+    });
+  }
 });
 
 function renderFrame() {

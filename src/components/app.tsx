@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Box, useWindowSize } from 'ink';
 import Player from './player.tsx';
 import Loading from './loading.tsx';
@@ -12,10 +12,18 @@ const workerPath = import.meta.url.endsWith('.tsx')
   : '../lib/project-worker.js';
 
 export default function App() {
+  const worker = useRef<Worker | null>(null);
   const [imageBuffer, setImageBuffer] = useState<Buffer | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [percent, setPercent] = useState(0);
   const { columns, rows } = useWindowSize();
+
+  const onMouse = useCallback((data: VM.MouseData) => {
+    worker.current?.postMessage({
+      type: 'mouse',
+      data
+    });
+  }, []);
 
   useEffect(() => {
     const projectWorker = new Worker(new URL(workerPath, import.meta.url), {
@@ -23,6 +31,7 @@ export default function App() {
       stdout: true,
       stderr: true,
     });
+    worker.current = projectWorker;
 
     // Keep the workers logs from writing over Ink's output.
     projectWorker.stdout.resume();
@@ -62,6 +71,7 @@ export default function App() {
     });
 
     return () => {
+      worker.current = null;
       clearInterval(frameTimer);
       projectWorker.removeAllListeners('message');
       projectWorker.removeAllListeners('exit');
@@ -81,7 +91,7 @@ export default function App() {
       height={Math.max(1, rows - 1)}
     >
       {imageBuffer ? (
-        <Player imageBuffer={imageBuffer} />
+        <Player imageBuffer={imageBuffer} onMouse={onMouse} />
       ) : (
         <Loading percent={percent} />
       )}

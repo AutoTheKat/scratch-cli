@@ -1,21 +1,60 @@
-import { useMemo } from 'react';
-import { Box, useWindowSize } from 'ink';
-import Image, { useTerminalInfo } from 'ink-picture';
+import { useEffect, useMemo, useRef } from 'react';
+import { Box, useStdin, useStdout, useWindowSize, type DOMElement } from 'ink';
+import Image, { usePosition, useTerminalInfo } from 'ink-picture';
+import { Mouse, type MouseEvent } from 'xterm-mouse';
 import Renderer from './renderer.tsx';
 import calculateStageSize from '../lib/stage-size.ts';
 import type { ImageProtocol } from '../lib/frame-encoder.ts';
 
 interface PlayerProps {
   imageBuffer: Buffer
+  onMouse: (data: VM.MouseData) => void
 }
 
 export default function Player(props: PlayerProps) {
+  const container = useRef<DOMElement>(null);
+  const position = usePosition(container);
+  const { stdin: input, setRawMode } = useStdin();
+  const { stdout: output } = useStdout();
   const terminal = useTerminalInfo();
   const { columns, rows } = useWindowSize();
   const stage = useMemo(
     () => calculateStageSize(columns, rows, terminal.cellWidth, terminal.cellHeight),
     [columns, rows, terminal.cellWidth, terminal.cellHeight]
   );
+
+  const stdin = input as typeof process.stdin;
+  const stdout = output as typeof process.stdout;
+
+  useEffect(() => {
+    if (!position || !Mouse.isSupported(stdin, stdout)) {
+      return;
+    }
+    const mouse = new Mouse({
+      inputStream: stdin,
+      outputStream: stdout,
+      setRawMode
+    });
+
+    const onMouse = (event: MouseEvent) => {
+      const data: VM.MouseData = {
+        x: event.x - 0.5 - position.col,
+        y: event.y + 0.5 - (rows - position.appHeight + position.row),
+        canvasWidth: position.width,
+        canvasHeight: position.height,
+      };
+      if (event.action === 'press' || event.action === 'release') {
+        data.isDown = event.action === 'press';
+      }
+      props.onMouse(data);
+    };
+    mouse.on('move', onMouse);
+    mouse.on('drag', onMouse);
+    mouse.on('press', onMouse);
+    mouse.on('release', onMouse);
+    mouse.enable();
+    return () => mouse.destroy();
+  }, [position, rows, stdin, stdout, setRawMode, props.onMouse]);
 
   let protocol: ImageProtocol | undefined;
   const preferITerm = ['iTerm.app', 'WarpTerminal', 'WezTerm'].includes(process.env.TERM_PROGRAM || '');
@@ -31,7 +70,7 @@ export default function Player(props: PlayerProps) {
 
   return (
     <Box width='100%' height='100%' alignItems='center' justifyContent='center'>
-      <Box width={stage.width} height={stage.height}>
+      <Box ref={container} width={stage.width} height={stage.height}>
         {protocol ? (
           <Renderer
             imageBuffer={props.imageBuffer}
