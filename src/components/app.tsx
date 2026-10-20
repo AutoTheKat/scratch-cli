@@ -25,6 +25,13 @@ export default function App() {
     });
   }, []);
 
+  const onKeyboard = useCallback((data: VM.KeyboardData) => {
+    worker.current?.postMessage({
+      type: 'keyboard',
+      data
+    });
+  }, []);
+
   useEffect(() => {
     const projectWorker = new Worker(new URL(workerPath, import.meta.url), {
       workerData: resolve(process.argv[2]),
@@ -91,7 +98,7 @@ export default function App() {
       height={Math.max(1, rows - 1)}
     >
       {imageBuffer ? (
-        <Player imageBuffer={imageBuffer} onMouse={onMouse} />
+        <Player imageBuffer={imageBuffer} onMouse={onMouse} onKeyboard={onKeyboard} />
       ) : (
         <Loading percent={percent} />
       )}

@@ -31,6 +31,9 @@ port.on('message', message => {
   if (message === 'frame') {
     renderFrame();
   }
+  if (message?.type === 'keyboard') {
+    scaffolding.vm.postIOData('keyboard', message.data);
+  }
   if (message?.type === 'mouse') {
     const canvas = scaffolding.vm.runtime.renderer.canvas;
     const data = message.data;

@@ -7,5 +7,16 @@ import App from './components/app.tsx';
 render(
   <InkPictureProvider>
     <App />
-  </InkPictureProvider>
+  </InkPictureProvider>,
+  {
+    kittyKeyboard: {
+      // Image detection buffers terminal replies, which races keyboard auto detection.
+      mode: 'enabled',
+      flags: [
+        'disambiguateEscapeCodes',
+        'reportEventTypes',
+        'reportAllKeysAsEscapeCodes'
+      ],
+    },
+  }
 );

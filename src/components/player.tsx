@@ -4,11 +4,13 @@ import Image, { usePosition, useTerminalInfo } from 'ink-picture';
 import { Mouse, type MouseEvent } from 'xterm-mouse';
 import Renderer from './renderer.tsx';
 import calculateStageSize from '../lib/stage-size.ts';
+import useKeyboard from '../lib/use-keyboard.ts';
 import type { ImageProtocol } from '../lib/frame-encoder.ts';
 
 interface PlayerProps {
   imageBuffer: Buffer
   onMouse: (data: VM.MouseData) => void
+  onKeyboard: (data: VM.KeyboardData) => void
 }
 
 export default function Player(props: PlayerProps) {
@@ -22,6 +24,7 @@ export default function Player(props: PlayerProps) {
     () => calculateStageSize(columns, rows, terminal.cellWidth, terminal.cellHeight),
     [columns, rows, terminal.cellWidth, terminal.cellHeight]
   );
+  useKeyboard(props.onKeyboard);
 
   const stdin = input as typeof process.stdin;
   const stdout = output as typeof process.stdout;
