@@ -6,16 +6,19 @@ import { createSVGWindow } from 'svgdom';
 // Will it work reliably? Who knows. We should replace this in the future though.
 import { createWebGLContext } from '@onirenaud/node-webgl';
 
-const dom = new JSDOM(`
+const dom = new JSDOM(
+  `
   <html>
     <body>
       <div id="app"></div>
     </body>
   </html>
-`, {
-  resources: 'usable',
-  pretendToBeVisual: true
-});
+`,
+  {
+    resources: 'usable',
+    pretendToBeVisual: true
+  }
+);
 
 // Patch some web stuff that scaffolding expects.
 Object.assign(globalThis, {
@@ -43,7 +46,12 @@ Object.assign(dom.window.SVGElement.prototype, {
 // The WebGL backend reads canvas textures through this pixel hook.
 Object.assign(dom.window.HTMLCanvasElement.prototype, {
   _toRGBA8(this: HTMLCanvasElement) {
-    return this.getContext('2d')!.getImageData(0, 0, this.width, this.height);
+    return this.getContext('2d')!.getImageData(
+      0,
+      0,
+      this.width,
+      this.height
+    );
   }
 });
 
@@ -58,7 +66,10 @@ Object.assign(dom.window.HTMLImageElement.prototype, {
   }
 });
 
-dom.window.HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, contextId: string) {
+dom.window.HTMLCanvasElement.prototype.getContext = function (
+  this: HTMLCanvasElement,
+  contextId: string
+) {
   switch (contextId) {
     case 'webgl':
       return createWebGLContext(480, 360, {

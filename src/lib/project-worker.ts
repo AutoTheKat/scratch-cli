@@ -24,7 +24,7 @@ const captureCanvas = createCanvas(480, 360);
 const captureContext = captureCanvas.getContext('2d');
 let previousPixels: Buffer | undefined;
 
-port.on('message', message => {
+port.on('message', (message) => {
   if (message === 'stop') {
     process.exit(0);
   }
@@ -39,40 +39,55 @@ port.on('message', message => {
     const data = message.data;
     scaffolding.vm.postIOData('mouse', {
       ...data,
-      x: data.x * canvas.width / data.canvasWidth,
-      y: data.y * canvas.height / data.canvasHeight,
+      x: (data.x * canvas.width) / data.canvasWidth,
+      y: (data.y * canvas.height) / data.canvasHeight,
       canvasWidth: canvas.width,
-      canvasHeight: canvas.height,
+      canvasHeight: canvas.height
     });
   }
 });
 
 function renderFrame() {
-  const canvas = scaffolding.vm.runtime.renderer.canvas as unknown as HTMLCanvasElement;
+  const canvas = scaffolding.vm.runtime.renderer
+    .canvas as unknown as HTMLCanvasElement;
   const pixels = canvas.getImageData();
-  const rgba = Buffer.from(pixels.data.buffer, pixels.data.byteOffset, pixels.data.byteLength);
+  const rgba = Buffer.from(
+    pixels.data.buffer,
+    pixels.data.byteOffset,
+    pixels.data.byteLength
+  );
 
   if (
     captureCanvas.width === pixels.width &&
     captureCanvas.height === pixels.height &&
-    previousPixels?.equals(rgba))
-  {
+    previousPixels?.equals(rgba)
+  ) {
     port.postMessage({ type: 'unchanged' });
     return;
   }
 
-  if (captureCanvas.width !== pixels.width || captureCanvas.height !== pixels.height) {
+  if (
+    captureCanvas.width !== pixels.width ||
+    captureCanvas.height !== pixels.height
+  ) {
     captureCanvas.width = pixels.width;
     captureCanvas.height = pixels.height;
   }
-  captureContext.putImageData(new ImageData(pixels.data, pixels.width, pixels.height), 0, 0);
+  captureContext.putImageData(
+    new ImageData(pixels.data, pixels.width, pixels.height),
+    0,
+    0
+  );
   previousPixels = rgba;
   // Use our own encoder to avoid the WebGL backend's JavaScript PNG filtering loop.
   const buffer = captureCanvas.toBuffer('image/png');
-  port.postMessage({
-    type: 'frame',
-    buffer
-  }, [buffer.buffer as ArrayBuffer]);
+  port.postMessage(
+    {
+      type: 'frame',
+      buffer
+    },
+    [buffer.buffer as ArrayBuffer]
+  );
 }
 
 async function loadProject() {
@@ -80,7 +95,8 @@ async function loadProject() {
   scaffolding.setup();
 
   const onProgress = (finished: number, total: number) => {
-    const percent = total > 0 ? Math.round(finished / total * 100) : 0;
+    const percent =
+      total > 0 ? Math.round((finished / total) * 100) : 0;
     port.postMessage({
       type: 'progress',
       percent

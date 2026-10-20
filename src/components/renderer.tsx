@@ -6,7 +6,7 @@ import type { ImageProtocol } from '../lib/frame-encoder.ts';
 
 interface RendererProps {
   protocol: ImageProtocol;
-  imageBuffer: Buffer
+  imageBuffer: Buffer;
 }
 
 export default function Renderer(props: RendererProps) {
@@ -19,7 +19,11 @@ export default function Renderer(props: RendererProps) {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const renderer = new FrameWriter(props.protocol, stdout, setError);
+    const renderer = new FrameWriter(
+      props.protocol,
+      stdout,
+      setError
+    );
     writer.current = renderer;
     return () => {
       renderer.stop();
@@ -48,7 +52,7 @@ export default function Renderer(props: RendererProps) {
       columns: position.width,
       rows: position.height,
       cellWidth: terminal.cellWidth,
-      cellHeight: terminal.cellHeight,
+      cellHeight: terminal.cellHeight
     });
   }, [
     props.imageBuffer,
@@ -64,11 +68,5 @@ export default function Renderer(props: RendererProps) {
     throw error;
   }
 
-  return (
-    <Box
-      ref={container}
-      width='100%'
-      height='100%'
-    />
-  );
+  return <Box ref={container} width="100%" height="100%" />;
 }

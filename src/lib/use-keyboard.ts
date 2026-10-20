@@ -1,8 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { useInput } from 'ink';
 
-export default function useKeyboard(onKeyboard: (data: VM.KeyboardData) => void) {
-  const releases = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+export default function useKeyboard(
+  onKeyboard: (data: VM.KeyboardData) => void
+) {
+  const releases = useRef<
+    Record<string, ReturnType<typeof setTimeout>>
+  >({});
 
   useInput((input, key) => {
     if (key.ctrl || key.meta || key.super || key.hyper) {
@@ -20,7 +24,11 @@ export default function useKeyboard(onKeyboard: (data: VM.KeyboardData) => void)
       value = 'ArrowRight';
     } else if (key.return) {
       value = 'Enter';
-    } else if (input.length !== 1 || input < ' ' || input === '\x7f') {
+    } else if (
+      input.length !== 1 ||
+      input < ' ' ||
+      input === '\x7f'
+    ) {
       return;
     }
 
@@ -37,10 +45,13 @@ export default function useKeyboard(onKeyboard: (data: VM.KeyboardData) => void)
     }
   });
 
-  useEffect(() => () => {
-    for (const [key, timer] of Object.entries(releases.current)) {
-      clearTimeout(timer);
-      onKeyboard({ key, isDown: false });
-    }
-  }, [onKeyboard]);
+  useEffect(
+    () => () => {
+      for (const [key, timer] of Object.entries(releases.current)) {
+        clearTimeout(timer);
+        onKeyboard({ key, isDown: false });
+      }
+    },
+    [onKeyboard]
+  );
 }

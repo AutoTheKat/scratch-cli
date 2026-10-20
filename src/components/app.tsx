@@ -33,11 +33,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const projectWorker = new Worker(new URL(workerPath, import.meta.url), {
-      workerData: resolve(process.argv[2]),
-      stdout: true,
-      stderr: true,
-    });
+    const projectWorker = new Worker(
+      new URL(workerPath, import.meta.url),
+      {
+        workerData: resolve(process.argv[2]),
+        stdout: true,
+        stderr: true
+      }
+    );
     worker.current = projectWorker;
 
     // Keep the workers logs from writing over Ink's output.
@@ -73,8 +76,14 @@ export default function App() {
       }
     });
     projectWorker.on('error', setError);
-    projectWorker.on('exit', code => {
-      setError(previous => previous || new Error(`Project worker exited unexpectedly (code ${code}).`));
+    projectWorker.on('exit', (code) => {
+      setError(
+        (previous) =>
+          previous ||
+          new Error(
+            `Project worker exited unexpectedly (code ${code}).`
+          )
+      );
     });
 
     return () => {
@@ -93,12 +102,13 @@ export default function App() {
   }
 
   return (
-    <Box
-      width={columns}
-      height={Math.max(1, rows - 1)}
-    >
+    <Box width={columns} height={Math.max(1, rows - 1)}>
       {imageBuffer ? (
-        <Player imageBuffer={imageBuffer} onMouse={onMouse} onKeyboard={onKeyboard} />
+        <Player
+          imageBuffer={imageBuffer}
+          onMouse={onMouse}
+          onKeyboard={onKeyboard}
+        />
       ) : (
         <Loading percent={percent} />
       )}

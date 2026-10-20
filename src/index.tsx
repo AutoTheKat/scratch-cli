@@ -16,7 +16,7 @@ render(
         'disambiguateEscapeCodes',
         'reportEventTypes',
         'reportAllKeysAsEscapeCodes'
-      ],
-    },
+      ]
+    }
   }
 );

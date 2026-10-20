@@ -1,5 +1,8 @@
 import { randomInt } from 'node:crypto';
-import FrameEncoder, { type ImageProtocol, type TerminalFrame } from './frame-encoder.ts';
+import FrameEncoder, {
+  type ImageProtocol,
+  type TerminalFrame
+} from './frame-encoder.ts';
 
 export default class FrameWriter {
   private encoder: FrameEncoder;
@@ -13,7 +16,7 @@ export default class FrameWriter {
   constructor(
     private protocol: ImageProtocol,
     private stdout: NodeJS.WritableStream,
-    private onError: (error: Error) => void,
+    private onError: (error: Error) => void
   ) {
     this.encoder = new FrameEncoder(protocol);
     stdout.on('error', onError);
@@ -34,7 +37,10 @@ export default class FrameWriter {
     while (this.pending && !this.stopped) {
       const frame = this.pending;
       this.pending = undefined;
-      const output = await this.encoder.encodeFrame(frame, this.imageId);
+      const output = await this.encoder.encodeFrame(
+        frame,
+        this.imageId
+      );
       if (this.stopped) {
         break;
       }
@@ -47,7 +53,7 @@ export default class FrameWriter {
       this.lastFrame = frame;
       await new Promise<void>((resolve, reject) => {
         // Wait for the write callback so slow output cannot accumulate old frames.
-        this.stdout.write(positioned, error => {
+        this.stdout.write(positioned, (error) => {
           if (error) {
             reject(error);
           } else {
@@ -56,7 +62,7 @@ export default class FrameWriter {
         });
       });
       this.previousId = this.imageId;
-      this.imageId = this.imageId % 0xffffffff + 1;
+      this.imageId = (this.imageId % 0xffffffff) + 1;
     }
     this.running = false;
   }
@@ -71,13 +77,21 @@ export default class FrameWriter {
     if (this.protocol === 'kitty') {
       this.stdout.write(`\x1b_Ga=d,d=I,i=${this.imageId},q=2\x1b\\`);
       if (this.previousId) {
-        this.stdout.write(`\x1b_Ga=d,d=I,i=${this.previousId},q=2\x1b\\`);
+        this.stdout.write(
+          `\x1b_Ga=d,d=I,i=${this.previousId},q=2\x1b\\`
+        );
       }
     } else if (this.lastFrame) {
       const frame = this.lastFrame;
       const lines: string[] = [];
-      for (let row = frame.row; row < frame.row + frame.rows; row += 1) {
-        lines.push(`\x1b[${row};${frame.column}H${' '.repeat(frame.columns)}`);
+      for (
+        let row = frame.row;
+        row < frame.row + frame.rows;
+        row += 1
+      ) {
+        lines.push(
+          `\x1b[${row};${frame.column}H${' '.repeat(frame.columns)}`
+        );
       }
       this.stdout.write(`\x1b7${lines.join('')}\x1b8`);
     }
