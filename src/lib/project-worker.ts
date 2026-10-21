@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { createCanvas, ImageData } from 'canvas';
 import { Scaffolding } from '@turbowarp/scaffolding';
 import type { HTMLCanvasElement } from '@onirenaud/node-webgl';
+import { ProjectControl } from '../types.ts';
 
 export type ProjectMessage =
   | { type: 'progress'; percent: number }
@@ -41,11 +42,11 @@ port.on('message', (message) => {
     renderFrame();
   }
   if (message?.type === 'control') {
-    if (message.action === 'restart') {
+    if (message.action === ProjectControl.GreenFlag) {
       scaffolding.greenFlag();
-    } else if (message.action === 'stop') {
+    } else if (message.action === ProjectControl.Stop) {
       scaffolding.stopAll();
-    } else if (message.action === 'turbo') {
+    } else if (message.action === ProjectControl.Turbo) {
       scaffolding.vm.setTurboMode(!scaffolding.vm.runtime.turboMode);
       reportState();
     }

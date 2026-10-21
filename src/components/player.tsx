@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import {
   Box,
+  Text,
   useStdin,
   useStdout,
   useWindowSize,
@@ -30,15 +31,31 @@ export default function Player(props: PlayerProps) {
   const { stdout: output } = useStdout();
   const terminal = useTerminalInfo();
   const { columns, rows } = useWindowSize();
+  let protocol: ImageProtocol | undefined;
+  const preferITerm = [
+    'iTerm.app',
+    'WarpTerminal',
+    'WezTerm'
+  ].includes(process.env.TERM_PROGRAM || '');
+  if (preferITerm && terminal.supportsITerm2Graphics) {
+    protocol = 'iterm2';
+  } else if (terminal.supportsKittyGraphics) {
+    protocol = 'kitty';
+  } else if (terminal.supportsITerm2Graphics) {
+    protocol = 'iterm2';
+  } else if (terminal.supportsSixelGraphics) {
+    protocol = 'sixel';
+  }
+
   const stage = useMemo(
     () =>
       calculateStageSize(
         columns,
-        rows - 2,
+        rows - (protocol ? 2 : 3),
         terminal.cellWidth,
         terminal.cellHeight
       ),
-    [columns, rows, terminal.cellWidth, terminal.cellHeight]
+    [columns, rows, protocol, terminal.cellWidth, terminal.cellHeight]
   );
   useKeyboard(props.onKeyboard);
 
@@ -87,22 +104,6 @@ export default function Player(props: PlayerProps) {
     return () => mouse.destroy();
   }, [position, rows, stdin, stdout, setRawMode, props.onMouse]);
 
-  let protocol: ImageProtocol | undefined;
-  const preferITerm = [
-    'iTerm.app',
-    'WarpTerminal',
-    'WezTerm'
-  ].includes(process.env.TERM_PROGRAM || '');
-  if (preferITerm && terminal.supportsITerm2Graphics) {
-    protocol = 'iterm2';
-  } else if (terminal.supportsKittyGraphics) {
-    protocol = 'kitty';
-  } else if (terminal.supportsITerm2Graphics) {
-    protocol = 'iterm2';
-  } else if (terminal.supportsSixelGraphics) {
-    protocol = 'sixel';
-  }
-
   return (
     <Box
       width="100%"
@@ -113,6 +114,7 @@ export default function Player(props: PlayerProps) {
     >
       <Box
         flexGrow={1}
+        flexDirection="column"
         width="100%"
         alignItems="center"
         justifyContent="center"
@@ -137,6 +139,13 @@ export default function Player(props: PlayerProps) {
             />
           )}
         </Box>
+        {!protocol && (
+          <Box width="100%" justifyContent="center" flexShrink={0}>
+            <Text dimColor wrap="truncate-end">
+              Use a terminal with image protocols for better quality.
+            </Text>
+          </Box>
+        )}
       </Box>
       <Controls
         running={props.running}

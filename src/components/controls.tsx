@@ -34,18 +34,23 @@ export default function Controls(props: ControlsProps) {
   });
 
   return (
-    <Box width="100%" flexDirection="column" flexShrink={0}>
+    <Box
+      width="100%"
+      flexDirection="column"
+      alignItems="center"
+      flexShrink={0}
+      marginTop={1}
+    >
       <Text wrap="truncate-end">
-        <Text color={props.running ? 'green' : 'red'} bold>
-          {props.running ? 'Running ⬤' : 'Stopped ⬣'}
+        <Text color={props.running ? 'green' : 'red'}>
+          {props.running ? '● Running' : '■ Stopped'}
         </Text>
         {props.turbo && (
           <Text color='magenta'>
-            {' · Turbo'}
+            {' (Turbo)'}
           </Text>
         )}
-      </Text>
-      <Text wrap="truncate-end">
+        <Text dimColor>{' · '}</Text>
         <Text color="green">^G Green Flag</Text>
         {'  '}
         <Text color="red">^X Stop</Text>
