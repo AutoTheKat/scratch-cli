@@ -11,7 +11,12 @@ const workerPath = import.meta.url.endsWith('.tsx')
   ? '../lib/project-worker.ts'
   : '../lib/project-worker.js';
 
-export default function App() {
+interface AppProps {
+  input: string[],
+  flags: Record<string, any>
+}
+
+export default function App(props: AppProps) {
   const worker = useRef<Worker | null>(null);
   const [imageBuffer, setImageBuffer] = useState<Buffer | null>(null);
   const [error, setError] = useState<Error | null>(null);
@@ -36,7 +41,7 @@ export default function App() {
     const projectWorker = new Worker(
       new URL(workerPath, import.meta.url),
       {
-        workerData: resolve(process.argv[2]),
+        workerData: resolve(props.input[0]),
         stdout: true,
         stderr: true
       }
