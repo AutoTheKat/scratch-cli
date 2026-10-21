@@ -1,8 +1,6 @@
 import { randomInt } from 'node:crypto';
-import FrameEncoder, {
-  type ImageProtocol,
-  type TerminalFrame
-} from './frame-encoder.ts';
+import FrameEncoder from './frame-encoder.ts';
+import type { ImageProtocol, TerminalFrame } from '../types.ts';
 
 export default class FrameWriter {
   private encoder: FrameEncoder;

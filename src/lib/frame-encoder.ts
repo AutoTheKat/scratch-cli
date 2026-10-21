@@ -5,18 +5,8 @@ import {
   type CanvasRenderingContext2D
 } from 'canvas';
 import { image2sixel } from 'sixel';
+import type { ImageProtocol, TerminalFrame } from '../types.ts';
 
-export type ImageProtocol = 'kitty' | 'iterm2' | 'sixel';
-
-export interface TerminalFrame {
-  buffer: Buffer;
-  row: number;
-  column: number;
-  columns: number;
-  rows: number;
-  cellWidth: number;
-  cellHeight: number;
-}
 
 export default class FrameEncoder {
   private canvas: Canvas | undefined;

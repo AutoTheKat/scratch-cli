@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import { useStdout, useWindowSize, Box, type DOMElement } from 'ink';
 import { usePosition, useTerminalInfo } from 'ink-picture';
 import FrameWriter from '../lib/frame-writer.ts';
-import type { ImageProtocol } from '../lib/frame-encoder.ts';
+import type { ImageProtocol } from '../types.ts';
 
 interface RendererProps {
   protocol: ImageProtocol;

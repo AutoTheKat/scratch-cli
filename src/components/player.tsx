@@ -12,8 +12,7 @@ import Renderer from './renderer.tsx';
 import Controls from './controls.tsx';
 import calculateStageSize from '../lib/stage-size.ts';
 import useKeyboard from '../lib/use-keyboard.ts';
-import type { ImageProtocol } from '../lib/frame-encoder.ts';
-import type { ProjectControl } from '../types.ts';
+import type { ProjectControl, ImageProtocol } from '../types.ts';
 
 interface PlayerProps {
   imageBuffer: Buffer;
