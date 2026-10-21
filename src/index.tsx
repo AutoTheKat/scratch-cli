@@ -24,6 +24,7 @@ render(
     <App input={cli.input} flags={cli.flags} />
   </InkPictureProvider>,
   {
+    alternateScreen: true,
     kittyKeyboard: {
       // Image detection buffers terminal replies, which races keyboard auto detection.
       mode: 'enabled',
