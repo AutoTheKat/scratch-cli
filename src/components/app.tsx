@@ -8,7 +8,6 @@ import type {
 } from '../types.ts';
 
 import { Worker } from 'node:worker_threads';
-import { resolve } from 'node:path';
 
 const workerPath = import.meta.url.endsWith('.tsx')
   ? '../lib/project-worker.ts'
@@ -53,7 +52,7 @@ export default function App(props: AppProps) {
     const projectWorker = new Worker(
       new URL(workerPath, import.meta.url),
       {
-        workerData: resolve(props.input[0]),
+        workerData: props.input[0],
         stdout: true,
         stderr: true
       }

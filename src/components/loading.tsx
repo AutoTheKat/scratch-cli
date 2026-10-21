@@ -37,13 +37,10 @@ export default function Loading(props: LoadingProps) {
         </Box>
         <Box width="60%" marginY={1}>
           <ProgressBar value={props.percent} />
-        </Box>
-        <Text>
           <Text color="magenta" bold>
-            {props.percent}%
+            {` ${props.percent}%`}
           </Text>
-          <Text dimColor> · assets loaded</Text>
-        </Text>
+        </Box>
       </Box>
     </Box>
   );

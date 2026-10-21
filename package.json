@@ -28,6 +28,7 @@
   "dependencies": {
     "@inkjs/ui": "^2.0.0",
     "@onirenaud/node-webgl": "^0.2.0",
+    "@turbowarp/sbdl": "^7.0.0",
     "@turbowarp/scaffolding": "^0.4.0",
     "canvas": "^3.2.3",
     "ink": "^8.0.0",

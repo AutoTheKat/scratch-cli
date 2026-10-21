@@ -9,6 +9,9 @@ import App from './components/app.tsx';
 const cli = meow(`
   Usage:
     scratch-cli project.sb3
+    scratch-cli 463553665
+    scratch-cli https://scratch.mit.edu/projects/463553665
+    scratch-cli https://example.com/project.sb3
 `, {
   flags: {},
   importMeta: import.meta

@@ -1,7 +1,7 @@
 import './suppress-vm-logs.ts';
 import './patches.ts';
 import { parentPort, workerData } from 'node:worker_threads';
-import { readFile } from 'node:fs/promises';
+import downloadProject from './download-project.ts';
 import { createCanvas, ImageData } from 'canvas';
 import { Scaffolding } from '@turbowarp/scaffolding';
 import type { HTMLCanvasElement } from '@onirenaud/node-webgl';
@@ -111,7 +111,27 @@ function renderFrame() {
 }
 
 async function loadProject() {
-  const buffer = await readFile(workerData);
+  let percent = 0;
+  const reportProgress = (value: number) => {
+    percent = Math.max(percent, Math.round(value));
+    port.postMessage({ type: 'progress', percent });
+  };
+
+  // Reserve half of the bar for downloading and half for VM loading.
+  const buffer = await downloadProject(
+    workerData,
+    (type, finished, total) => {
+      const phase = [
+        'metadata',
+        'project',
+        'assets',
+        'compress'
+      ].indexOf(type);
+      const progress = total > 0 ? finished / total : 0;
+      reportProgress(((phase + progress) / 4) * 50);
+    }
+  );
+  reportProgress(50);
   scaffolding.setup();
 
   scaffolding.vm.on('PROJECT_RUN_START', () => {
@@ -124,12 +144,8 @@ async function loadProject() {
   });
 
   const onProgress = (finished: number, total: number) => {
-    const percent =
-      total > 0 ? Math.round((finished / total) * 100) : 0;
-    port.postMessage({
-      type: 'progress',
-      percent
-    });
+    const progress = total > 0 ? finished / total : 0;
+    reportProgress(50 + progress * 50);
   };
 
   scaffolding.vm.on('ASSET_PROGRESS', onProgress);
@@ -139,6 +155,7 @@ async function loadProject() {
     scaffolding.vm.off('ASSET_PROGRESS', onProgress);
   }
 
+  reportProgress(100);
   scaffolding.start();
   port.postMessage({ type: 'ready' });
 }
