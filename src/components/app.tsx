@@ -2,7 +2,10 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Box, useWindowSize } from 'ink';
 import Player from './player.tsx';
 import Loading from './loading.tsx';
-import type { ProjectMessage } from '../lib/project-worker.ts';
+import type {
+  ProjectControl,
+  WorkerMessage
+} from '../types.ts';
 
 import { Worker } from 'node:worker_threads';
 import { resolve } from 'node:path';
@@ -12,8 +15,8 @@ const workerPath = import.meta.url.endsWith('.tsx')
   : '../lib/project-worker.js';
 
 interface AppProps {
-  input: string[],
-  flags: Record<string, any>
+  input: string[];
+  flags: Record<string, any>;
 }
 
 export default function App(props: AppProps) {
@@ -21,7 +24,16 @@ export default function App(props: AppProps) {
   const [imageBuffer, setImageBuffer] = useState<Buffer | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [percent, setPercent] = useState(0);
+  const [running, setRunning] = useState(false);
+  const [turbo, setTurbo] = useState(false);
   const { columns, rows } = useWindowSize();
+
+  const onControl = useCallback((action: ProjectControl) => {
+    worker.current?.postMessage({
+      type: 'control',
+      action
+    });
+  }, []);
 
   const onMouse = useCallback((data: VM.MouseData) => {
     worker.current?.postMessage({
@@ -62,22 +74,29 @@ export default function App(props: AppProps) {
     };
     const frameTimer = setInterval(requestFrame, 1000 / 30);
 
-    projectWorker.on('message', (message: ProjectMessage) => {
-      if (message.type === 'progress') {
-        setPercent(message.percent);
-      } else if (message.type === 'ready') {
-        ready = true;
-        requestFrame();
-      } else if (message.type === 'frame') {
-        pending = false;
-        const buffer = Buffer.from(
-          message.buffer.buffer,
-          message.buffer.byteOffset,
-          message.buffer.byteLength
-        );
-        setImageBuffer(buffer);
-      } else {
-        pending = false;
+    projectWorker.on('message', (message: WorkerMessage) => {
+      switch (message.type) {
+        case 'progress':
+          setPercent(message.percent);
+          break;
+        case 'ready':
+          ready = true;
+          requestFrame();
+          break;
+        case 'state':
+          setRunning(message.running);
+          setTurbo(message.turbo);
+          break;
+        case 'frame':
+          const buffer = Buffer.from(
+            message.buffer.buffer,
+            message.buffer.byteOffset,
+            message.buffer.byteLength
+          );
+          setImageBuffer(buffer);
+          // Fall-through
+        default:
+          pending = false;
       }
     });
     projectWorker.on('error', setError);
@@ -113,6 +132,9 @@ export default function App(props: AppProps) {
           imageBuffer={imageBuffer}
           onMouse={onMouse}
           onKeyboard={onKeyboard}
+          onControl={onControl}
+          running={running}
+          turbo={turbo}
         />
       ) : (
         <Loading percent={percent} />

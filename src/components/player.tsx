@@ -9,14 +9,19 @@ import {
 import Image, { usePosition, useTerminalInfo } from 'ink-picture';
 import { Mouse, type MouseEvent } from 'xterm-mouse';
 import Renderer from './renderer.tsx';
+import Controls from './controls.tsx';
 import calculateStageSize from '../lib/stage-size.ts';
 import useKeyboard from '../lib/use-keyboard.ts';
 import type { ImageProtocol } from '../lib/frame-encoder.ts';
+import type { ProjectControl } from '../types.ts';
 
 interface PlayerProps {
   imageBuffer: Buffer;
   onMouse: (data: VM.MouseData) => void;
   onKeyboard: (data: VM.KeyboardData) => void;
+  onControl: (control: ProjectControl) => void;
+  running: boolean;
+  turbo: boolean;
 }
 
 export default function Player(props: PlayerProps) {
@@ -30,7 +35,7 @@ export default function Player(props: PlayerProps) {
     () =>
       calculateStageSize(
         columns,
-        rows,
+        rows - 2,
         terminal.cellWidth,
         terminal.cellHeight
       ),
@@ -52,12 +57,24 @@ export default function Player(props: PlayerProps) {
     });
 
     const onMouse = (event: MouseEvent) => {
+      const x = event.x - 0.5 - position.col;
+      const y =
+        event.y + 0.5 - (rows - position.appHeight + position.row);
       const data: VM.MouseData = {
-        x: event.x - 0.5 - position.col,
-        y: event.y + 0.5 - (rows - position.appHeight + position.row),
+        x,
+        y,
         canvasWidth: position.width,
         canvasHeight: position.height
       };
+      if (
+        event.action === 'press' &&
+        (x < 0 ||
+          y < 0 ||
+          x >= position.width ||
+          y >= position.height)
+      ) {
+        return;
+      }
       if (event.action === 'press' || event.action === 'release') {
         data.isDown = event.action === 'press';
       }
@@ -91,24 +108,42 @@ export default function Player(props: PlayerProps) {
     <Box
       width="100%"
       height="100%"
+      flexDirection="column"
       alignItems="center"
       justifyContent="center"
     >
-      <Box ref={container} width={stage.width} height={stage.height}>
-        {protocol ? (
-          <Renderer
-            imageBuffer={props.imageBuffer}
-            protocol={protocol}
-          />
-        ) : (
-          <Image
-            src={props.imageBuffer}
-            width="100%"
-            height="100%"
-            objectFit="contain"
-          />
-        )}
+      <Box
+        flexGrow={1}
+        width="100%"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <Box
+          ref={container}
+          width={stage.width}
+          height={stage.height}
+          flexShrink={0}
+        >
+          {protocol ? (
+            <Renderer
+              imageBuffer={props.imageBuffer}
+              protocol={protocol}
+            />
+          ) : (
+            <Image
+              src={props.imageBuffer}
+              width="100%"
+              height="100%"
+              objectFit="contain"
+            />
+          )}
+        </Box>
       </Box>
+      <Controls
+        running={props.running}
+        turbo={props.turbo}
+        onControl={props.onControl}
+      />
     </Box>
   );
 }

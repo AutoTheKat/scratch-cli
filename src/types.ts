@@ -1,0 +1,27 @@
+export type WorkerMessage =
+| { type: 'progress'; percent: number }
+| { type: 'ready' }
+| { type: 'unchanged' }
+| { type: 'state'; running: boolean; turbo: boolean }
+| { type: 'frame'; buffer: Uint8Array };
+
+
+export enum ProjectControl {
+  GreenFlag,
+  Stop,
+  Turbo
+};
+
+// Rendering-related
+
+export type ImageProtocol = 'kitty' | 'iterm2' | 'sixel';
+
+export interface TerminalFrame {
+  buffer: Buffer;
+  row: number;
+  column: number;
+  columns: number;
+  rows: number;
+  cellWidth: number;
+  cellHeight: number;
+}

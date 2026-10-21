@@ -23,6 +23,15 @@ const scaffolding = new Scaffolding();
 const captureCanvas = createCanvas(480, 360);
 const captureContext = captureCanvas.getContext('2d');
 let previousPixels: Buffer | undefined;
+let running = false;
+
+function reportState() {
+  port.postMessage({
+    type: 'state',
+    running,
+    turbo: scaffolding.vm.runtime.turboMode
+  });
+}
 
 port.on('message', (message) => {
   if (message === 'stop') {
@@ -30,6 +39,16 @@ port.on('message', (message) => {
   }
   if (message === 'frame') {
     renderFrame();
+  }
+  if (message?.type === 'control') {
+    if (message.action === 'restart') {
+      scaffolding.greenFlag();
+    } else if (message.action === 'stop') {
+      scaffolding.stopAll();
+    } else if (message.action === 'turbo') {
+      scaffolding.vm.setTurboMode(!scaffolding.vm.runtime.turboMode);
+      reportState();
+    }
   }
   if (message?.type === 'keyboard') {
     scaffolding.vm.postIOData('keyboard', message.data);
@@ -93,6 +112,15 @@ function renderFrame() {
 async function loadProject() {
   const buffer = await readFile(workerData);
   scaffolding.setup();
+
+  scaffolding.vm.on('PROJECT_RUN_START', () => {
+    running = true;
+    reportState();
+  });
+  scaffolding.vm.on('PROJECT_RUN_STOP', () => {
+    running = false;
+    reportState();
+  });
 
   const onProgress = (finished: number, total: number) => {
     const percent =
