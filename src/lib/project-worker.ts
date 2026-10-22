@@ -3,9 +3,11 @@ import './patches.ts';
 import { parentPort, workerData } from 'node:worker_threads';
 import downloadProject from './download-project.ts';
 import { createCanvas, ImageData } from 'canvas';
-import { Scaffolding } from '@turbowarp/scaffolding';
+import loadRuntime from './load-runtime.ts';
 import type { HTMLCanvasElement } from '@onirenaud/node-webgl';
 import { ProjectControl } from '../types.ts';
+
+// todo: clean all of this up
 
 export type ProjectMessage =
   | { type: 'progress'; percent: number }
@@ -13,14 +15,15 @@ export type ProjectMessage =
   | { type: 'unchanged' }
   | { type: 'frame'; buffer: Uint8Array };
 
-if (!parentPort || typeof workerData !== 'string') {
+if (!parentPort || typeof workerData?.input !== 'string') {
   // This is to just get TypeScript to stop complaining,
   // Realistically this should never be called.
   throw new Error('This should never happen.');
 }
 
 const port = parentPort;
-const scaffolding = new Scaffolding();
+const project = await loadRuntime(workerData.flags);
+const vm = project.vm;
 const captureCanvas = createCanvas(480, 360);
 const captureContext = captureCanvas.getContext('2d');
 let previousPixels: Buffer | undefined;
@@ -30,7 +33,7 @@ function reportState() {
   port.postMessage({
     type: 'state',
     running,
-    turbo: scaffolding.vm.runtime.turboMode
+    turbo: vm.runtime.turboMode
   });
 }
 
@@ -43,21 +46,22 @@ port.on('message', (message) => {
   }
   if (message?.type === 'control') {
     if (message.action === ProjectControl.GreenFlag) {
-      scaffolding.greenFlag();
+      vm.start();
+      vm.greenFlag();
     } else if (message.action === ProjectControl.Stop) {
-      scaffolding.stopAll();
+      vm.stopAll();
     } else if (message.action === ProjectControl.Turbo) {
-      scaffolding.vm.setTurboMode(!scaffolding.vm.runtime.turboMode);
+      vm.setTurboMode(!vm.runtime.turboMode);
       reportState();
     }
   }
   if (message?.type === 'keyboard') {
-    scaffolding.vm.postIOData('keyboard', message.data);
+    vm.postIOData('keyboard', message.data);
   }
   if (message?.type === 'mouse') {
-    const canvas = scaffolding.vm.runtime.renderer.canvas;
+    const canvas = vm.runtime.renderer.canvas;
     const data = message.data;
-    scaffolding.vm.postIOData('mouse', {
+    vm.postIOData('mouse', {
       ...data,
       x: (data.x * canvas.width) / data.canvasWidth,
       y: (data.y * canvas.height) / data.canvasHeight,
@@ -68,7 +72,7 @@ port.on('message', (message) => {
 });
 
 function renderFrame() {
-  const canvas = scaffolding.vm.runtime.renderer
+  const canvas = vm.runtime.renderer
     .canvas as unknown as HTMLCanvasElement;
   const pixels = canvas.getImageData();
   const rgba = Buffer.from(
@@ -119,7 +123,7 @@ async function loadProject() {
 
   // Reserve half of the bar for downloading and half for VM loading.
   const buffer = await downloadProject(
-    workerData,
+    workerData.input,
     (type, finished, total) => {
       const phase = [
         'metadata',
@@ -132,13 +136,12 @@ async function loadProject() {
     }
   );
   reportProgress(50);
-  scaffolding.setup();
 
-  scaffolding.vm.on('PROJECT_RUN_START', () => {
+  vm.on('PROJECT_RUN_START', () => {
     running = true;
     reportState();
   });
-  scaffolding.vm.on('PROJECT_RUN_STOP', () => {
+  vm.on('PROJECT_RUN_STOP', () => {
     running = false;
     reportState();
   });
@@ -148,16 +151,17 @@ async function loadProject() {
     reportProgress(50 + progress * 50);
   };
 
-  scaffolding.vm.on('ASSET_PROGRESS', onProgress);
+  vm.on('ASSET_PROGRESS', onProgress);
   try {
-    await scaffolding.loadProject(buffer);
+    await project.loadProject(buffer);
   } finally {
-    scaffolding.vm.off('ASSET_PROGRESS', onProgress);
+    vm.off('ASSET_PROGRESS', onProgress);
   }
 
   reportProgress(100);
-  scaffolding.start();
+  vm.start();
+  vm.greenFlag();
   port.postMessage({ type: 'ready' });
 }
 
-loadProject();
+await loadProject();

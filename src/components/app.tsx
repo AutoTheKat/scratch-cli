@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Box, useWindowSize } from 'ink';
+import { Box, useApp, useWindowSize } from 'ink';
 import Player from './player.tsx';
 import Loading from './loading.tsx';
 import type {
+  CLIFlags,
   ProjectControl,
   WorkerMessage
 } from '../types.ts';
@@ -15,17 +16,17 @@ const workerPath = import.meta.url.endsWith('.tsx')
 
 interface AppProps {
   input: string[];
-  flags: Record<string, any>;
+  flags: CLIFlags;
 }
 
 export default function App(props: AppProps) {
   const worker = useRef<Worker | null>(null);
   const [imageBuffer, setImageBuffer] = useState<Buffer | null>(null);
-  const [error, setError] = useState<Error | null>(null);
   const [percent, setPercent] = useState(0);
   const [running, setRunning] = useState(false);
   const [turbo, setTurbo] = useState(false);
   const { columns, rows } = useWindowSize();
+  const { exit } = useApp();
 
   const onControl = useCallback((action: ProjectControl) => {
     worker.current?.postMessage({
@@ -52,7 +53,10 @@ export default function App(props: AppProps) {
     const projectWorker = new Worker(
       new URL(workerPath, import.meta.url),
       {
-        workerData: props.input[0],
+        workerData: {
+          input: props.input[0],
+          flags: props.flags
+        },
         stdout: true,
         stderr: true
       }
@@ -98,15 +102,8 @@ export default function App(props: AppProps) {
           pending = false;
       }
     });
-    projectWorker.on('error', setError);
-    projectWorker.on('exit', (code) => {
-      setError(
-        (previous) =>
-          previous ||
-          new Error(
-            `Project worker exited unexpectedly (code ${code}).`
-          )
-      );
+    projectWorker.on('error', (error: unknown) => {
+      exit(error instanceof Error ? error : new Error(String(error)));
     });
 
     return () => {
@@ -118,11 +115,7 @@ export default function App(props: AppProps) {
       projectWorker.postMessage('stop');
       projectWorker.unref();
     };
-  }, []);
-
-  if (error) {
-    throw error;
-  }
+  }, [exit, props.input, props.flags]);
 
   return (
     <Box width={columns} height={Math.max(1, rows - 1)}>

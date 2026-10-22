@@ -6,23 +6,35 @@ import meow from 'meow';
 import App from './components/app.tsx';
 
 // meow
-const cli = meow(`
+const cli = meow(
+  `
   Usage:
     scratch-cli project.sb3
     scratch-cli 463553665
     scratch-cli https://scratch.mit.edu/projects/463553665
     scratch-cli https://example.com/project.sb3
-`, {
-  flags: {},
-  importMeta: import.meta
-});
+
+  Options:
+    --vm=<module>        Custom VM module path
+    --renderer=<module>  Custom Renderer module path
+    --storage=<module>   Custom Storage module path
+`,
+  {
+    importMeta: import.meta,
+    flags: {
+      vm: { type: 'string' },
+      renderer: { type: 'string' },
+      storage: { type: 'string' }
+    }
+  }
+);
 
 if (cli.input.length === 0) {
   cli.showHelp();
   process.exit(0);
 }
 
-render(
+const app = render(
   <InkPictureProvider>
     <App input={cli.input} flags={cli.flags} />
   </InkPictureProvider>,
@@ -39,3 +51,13 @@ render(
     }
   }
 );
+
+try {
+  await app.waitUntilExit();
+} catch (error) {
+  const message =
+    error instanceof Error ? error.message : String(error);
+
+  process.stderr.write(`\u001b[31mError: ${message}\u001b[0m\n`);
+  process.exitCode = 1;
+}

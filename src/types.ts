@@ -1,3 +1,9 @@
+export interface CLIFlags {
+  vm?: string;
+  renderer?: string;
+  storage?: string;
+}
+
 export type WorkerMessage =
 | { type: 'progress'; percent: number }
 | { type: 'ready' }
