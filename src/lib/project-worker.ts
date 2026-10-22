@@ -1,40 +1,66 @@
 import './suppress-vm-logs.ts';
 import './patches.ts';
 import { parentPort, workerData } from 'node:worker_threads';
-import downloadProject from './download-project.ts';
 import { createCanvas, ImageData } from 'canvas';
-import loadRuntime from './load-runtime.ts';
-import type { HTMLCanvasElement } from '@onirenaud/node-webgl';
+import type { HTMLCanvasElement as WebGLCanvas } from '@onirenaud/node-webgl';
 import { ProjectControl } from '../types.ts';
-
-// todo: clean all of this up
-
-export type ProjectMessage =
-  | { type: 'progress'; percent: number }
-  | { type: 'ready' }
-  | { type: 'unchanged' }
-  | { type: 'frame'; buffer: Uint8Array };
+import downloadProject from './download-project.ts';
+import loadRuntime from './load-runtime.ts';
 
 if (!parentPort || typeof workerData?.input !== 'string') {
-  // This is to just get TypeScript to stop complaining,
-  // Realistically this should never be called.
-  throw new Error('This should never happen.');
+  throw new Error('Project worker requires a parent port and input.');
 }
 
 const port = parentPort;
 const project = await loadRuntime(workerData.flags);
-const vm = project.vm;
+const { vm } = project;
 const captureCanvas = createCanvas(480, 360);
 const captureContext = captureCanvas.getContext('2d');
 let previousPixels: Buffer | undefined;
 let running = false;
+let percent = 0;
 
-function reportState() {
-  port.postMessage({
-    type: 'state',
-    running,
-    turbo: vm.runtime.turboMode
-  });
+function startProject() {
+  vm.start();
+  vm.greenFlag();
+}
+
+function reportState(active = running) {
+  running = active;
+  const turbo = vm.runtime.turboMode;
+  port.postMessage({ type: 'state', running, turbo });
+}
+
+function reportProgress(value: number) {
+  percent = Math.max(percent, Math.round(value));
+  port.postMessage({ type: 'progress', percent });
+}
+
+function renderFrame() {
+  const canvas = vm.runtime.renderer.canvas as unknown as WebGLCanvas;
+  const { data, width, height } = canvas.getImageData();
+  const { buffer, byteOffset, byteLength } = data;
+  const rgba = Buffer.from(buffer, byteOffset, byteLength);
+  const resized =
+    captureCanvas.width !== width || captureCanvas.height !== height;
+
+  if (!resized && previousPixels?.equals(rgba)) {
+    port.postMessage({ type: 'unchanged' });
+    return;
+  }
+
+  if (resized) {
+    captureCanvas.width = width;
+    captureCanvas.height = height;
+  }
+  const image = new ImageData(data, width, height);
+  captureContext.putImageData(image, 0, 0);
+  previousPixels = rgba;
+  // Use our own encoder to avoid the WebGL backend's JavaScript PNG filtering loop.
+  const png = captureCanvas.toBuffer('image/png');
+  port.postMessage({ type: 'frame', buffer: png }, [
+    png.buffer as ArrayBuffer
+  ]);
 }
 
 port.on('message', (message) => {
@@ -46,8 +72,7 @@ port.on('message', (message) => {
   }
   if (message?.type === 'control') {
     if (message.action === ProjectControl.GreenFlag) {
-      vm.start();
-      vm.greenFlag();
+      startProject();
     } else if (message.action === ProjectControl.Stop) {
       vm.stopAll();
     } else if (message.action === ProjectControl.Turbo) {
@@ -59,109 +84,44 @@ port.on('message', (message) => {
     vm.postIOData('keyboard', message.data);
   }
   if (message?.type === 'mouse') {
-    const canvas = vm.runtime.renderer.canvas;
-    const data = message.data;
+    const { width, height } = vm.runtime.renderer.canvas;
+    const { data } = message;
     vm.postIOData('mouse', {
       ...data,
-      x: (data.x * canvas.width) / data.canvasWidth,
-      y: (data.y * canvas.height) / data.canvasHeight,
-      canvasWidth: canvas.width,
-      canvasHeight: canvas.height
+      x: (data.x * width) / data.canvasWidth,
+      y: (data.y * height) / data.canvasHeight,
+      canvasWidth: width,
+      canvasHeight: height
     });
   }
 });
 
-function renderFrame() {
-  const canvas = vm.runtime.renderer
-    .canvas as unknown as HTMLCanvasElement;
-  const pixels = canvas.getImageData();
-  const rgba = Buffer.from(
-    pixels.data.buffer,
-    pixels.data.byteOffset,
-    pixels.data.byteLength
-  );
-
-  if (
-    captureCanvas.width === pixels.width &&
-    captureCanvas.height === pixels.height &&
-    previousPixels?.equals(rgba)
-  ) {
-    port.postMessage({ type: 'unchanged' });
-    return;
-  }
-
-  if (
-    captureCanvas.width !== pixels.width ||
-    captureCanvas.height !== pixels.height
-  ) {
-    captureCanvas.width = pixels.width;
-    captureCanvas.height = pixels.height;
-  }
-  captureContext.putImageData(
-    new ImageData(pixels.data, pixels.width, pixels.height),
-    0,
-    0
-  );
-  previousPixels = rgba;
-  // Use our own encoder to avoid the WebGL backend's JavaScript PNG filtering loop.
-  const buffer = captureCanvas.toBuffer('image/png');
-  port.postMessage(
-    {
-      type: 'frame',
-      buffer
-    },
-    [buffer.buffer as ArrayBuffer]
-  );
-}
-
-async function loadProject() {
-  let percent = 0;
-  const reportProgress = (value: number) => {
-    percent = Math.max(percent, Math.round(value));
-    port.postMessage({ type: 'progress', percent });
-  };
-
-  // Reserve half of the bar for downloading and half for VM loading.
-  const buffer = await downloadProject(
-    workerData.input,
-    (type, finished, total) => {
-      const phase = [
-        'metadata',
-        'project',
-        'assets',
-        'compress'
-      ].indexOf(type);
-      const progress = total > 0 ? finished / total : 0;
-      reportProgress(((phase + progress) / 4) * 50);
-    }
-  );
-  reportProgress(50);
-
-  vm.on('PROJECT_RUN_START', () => {
-    running = true;
-    reportState();
-  });
-  vm.on('PROJECT_RUN_STOP', () => {
-    running = false;
-    reportState();
-  });
-
-  const onProgress = (finished: number, total: number) => {
+// Reserve half of the bar for downloading and half for VM loading.
+const phases = ['metadata', 'project', 'assets', 'compress'];
+const buffer = await downloadProject(
+  workerData.input,
+  (type, finished, total) => {
+    const phase = phases.indexOf(type);
     const progress = total > 0 ? finished / total : 0;
-    reportProgress(50 + progress * 50);
-  };
-
-  vm.on('ASSET_PROGRESS', onProgress);
-  try {
-    await project.loadProject(buffer);
-  } finally {
-    vm.off('ASSET_PROGRESS', onProgress);
+    reportProgress(((phase + progress) / 4) * 50);
   }
+);
+reportProgress(50);
 
-  reportProgress(100);
-  vm.start();
-  vm.greenFlag();
-  port.postMessage({ type: 'ready' });
+vm.on('PROJECT_RUN_START', () => reportState(true));
+vm.on('PROJECT_RUN_STOP', () => reportState(false));
+const onProgress = (finished: number, total: number) => {
+  const progress = total > 0 ? finished / total : 0;
+  reportProgress(50 + progress * 50);
+};
+
+vm.on('ASSET_PROGRESS', onProgress);
+try {
+  await project.loadProject(buffer);
+} finally {
+  vm.off('ASSET_PROGRESS', onProgress);
 }
 
-await loadProject();
+reportProgress(100);
+startProject();
+port.postMessage({ type: 'ready' });
