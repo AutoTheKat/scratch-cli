@@ -20,11 +20,19 @@
   "files": [
     "dist"
   ],
+  "bundleDependencies": [
+    "canvas",
+    "@onirenaud/node-webgl"
+  ],
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "build": "tsc",
+    "check:release": "node scripts/check-release.mjs",
+    "collect:prebuilds": "node scripts/collect-prebuilds.mjs",
+    "prepare:prebuilds": "node scripts/prepare-prebuilds.mjs",
+    "pack:release": "node scripts/pack-release.mjs",
     "prepack": "npm run build",
     "test": "npm run build && node --import tsx --test tests/*.test.ts",
     "format": "prettier . --write",
