@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true
+  },
+  "include": [
+    "./**/*.ts",
+    "../src/**/*.d.ts",
+    "../node_modules/@turbowarp/scaffolding/types.d.ts"
+  ]
+}
