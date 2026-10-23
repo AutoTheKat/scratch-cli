@@ -1,5 +1,5 @@
 {
-  "name": "scratch-cli",
+  "name": "@lordcat0/scratch-cli",
   "version": "0.0.0",
   "description": "Run Scratch projects in your terminal.",
   "keywords": [
@@ -9,9 +9,23 @@
   "license": "MIT",
   "author": "LordCat0",
   "type": "module",
-  "main": "src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LordCat0/scratch-cli.git"
+  },
+  "engines": {
+    "node": ">=24.15.0"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc",
+    "prepack": "npm run build",
     "test": "npm run build && node --import tsx --test tests/*.test.ts",
     "format": "prettier . --write",
     "start": "tsx src/index.tsx"
