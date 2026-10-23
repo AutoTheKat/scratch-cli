@@ -55,6 +55,7 @@
     "xterm-mouse": "^1.0.0"
   },
   "bin": {
-    "scratch-cli": "./dist/index.js"
+    "scratch-cli": "./dist/index.js",
+    "scr": "./dist/index.js"
   }
 }
