@@ -9,6 +9,9 @@ interface VM {
 
 declare namespace VM {
   interface Runtime {
+    ext_scratch3_sensing?: {
+      _questionList: [string, ...unknown[]][];
+    };
     wrapAssetRequest?<T>(request: () => Promise<T>): Promise<T>;
   }
 

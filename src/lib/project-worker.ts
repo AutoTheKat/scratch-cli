@@ -112,6 +112,10 @@ port.on('message', (message) => {
   if (message?.type === 'keyboard') {
     vm.postIOData('keyboard', message.data);
   }
+  if (message?.type === 'answer') {
+    port.postMessage({ type: 'question', question: null });
+    vm.runtime.emit('ANSWER', message.answer);
+  }
   if (message?.type === 'mouse') {
     const { width, height } = vm.runtime.renderer.canvas;
     const { data } = message;
@@ -139,6 +143,13 @@ reportProgress(50);
 
 vm.on('PROJECT_RUN_START', () => reportState(true));
 vm.on('PROJECT_RUN_STOP', () => reportState(false));
+vm.runtime.on('QUESTION', (question) => {
+  if (question === '') {
+    question =
+      vm.runtime.ext_scratch3_sensing?._questionList[0]?.[0] || '';
+  }
+  port.postMessage({ type: 'question', question });
+});
 const onProgress = (finished: number, total: number) => {
   const progress = total > 0 ? finished / total : 0;
   reportProgress(50 + progress * 50);

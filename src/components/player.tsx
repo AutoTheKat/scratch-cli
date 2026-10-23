@@ -8,6 +8,7 @@ import {
   type DOMElement
 } from 'ink';
 import Image, { usePosition, useTerminalInfo } from 'ink-picture';
+import { TextInput } from '@inkjs/ui';
 import { Mouse, type MouseEvent } from 'xterm-mouse';
 import Renderer from './renderer.tsx';
 import Controls from './controls.tsx';
@@ -26,6 +27,8 @@ interface PlayerProps {
   onControl: (control: ProjectControl) => void;
   running: boolean;
   turbo: boolean;
+  question: string | null;
+  onAnswer: (answer: string) => void;
 }
 
 export default function Player(props: PlayerProps) {
@@ -35,6 +38,7 @@ export default function Player(props: PlayerProps) {
   const { stdout: output } = useStdout();
   const terminal = useTerminalInfo();
   const { columns, rows } = useWindowSize();
+  const asking = props.question !== null;
   let protocol: ImageProtocol | undefined;
   const preferITerm = [
     'iTerm.app',
@@ -55,7 +59,7 @@ export default function Player(props: PlayerProps) {
     () =>
       calculateStageSize(
         columns,
-        rows - (protocol ? 2 : 3),
+        rows - (protocol ? 2 : 3) - (asking ? 1 : 0),
         terminal.cellWidth,
         terminal.cellHeight,
         props.frame.width,
@@ -65,16 +69,28 @@ export default function Player(props: PlayerProps) {
       columns,
       rows,
       protocol,
+      asking,
       terminal.cellWidth,
       terminal.cellHeight,
       props.frame.width,
       props.frame.height
     ]
   );
-  useKeyboard(props.onKeyboard);
+  useKeyboard(props.onKeyboard, !asking);
 
   const stdin = input as typeof process.stdin;
   const stdout = output as typeof process.stdout;
+
+  useEffect(() => {
+    if (!asking) {
+      return;
+    }
+    // TextInput needs normal text input without Kitty key releases.
+    stdout.write('\x1b[>0u');
+    return () => {
+      stdout.write('\x1b[<u');
+    };
+  }, [asking, stdout]);
 
   useEffect(() => {
     if (!position || !Mouse.isSupported(stdin, stdout)) {
@@ -150,7 +166,16 @@ export default function Player(props: PlayerProps) {
             />
           )}
         </Box>
-        {!protocol && (
+        {asking && (
+          <Box width={stage.width} justifyContent="center" flexShrink={0}>
+            <TextInput
+              key={props.question}
+              placeholder={props.question || 'Answer...'}
+              onSubmit={props.onAnswer}
+            />
+          </Box>
+        )}
+        {!protocol && !asking && (
           <Box width="100%" justifyContent="center" flexShrink={0}>
             <Text dimColor wrap="truncate-end">
               Use a terminal with image support for better quality.

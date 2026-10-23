@@ -9,6 +9,7 @@ export type WorkerMessage =
   | { type: 'ready' }
   | { type: 'unchanged' }
   | { type: 'state'; running: boolean; turbo: boolean }
+  | { type: 'question'; question: string | null }
   | {
       type: 'frame';
       buffer: Uint8Array;

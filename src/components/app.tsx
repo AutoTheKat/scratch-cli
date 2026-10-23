@@ -26,6 +26,7 @@ export default function App(props: AppProps) {
   const [percent, setPercent] = useState(0);
   const [running, setRunning] = useState(false);
   const [turbo, setTurbo] = useState(false);
+  const [question, setQuestion] = useState<string | null>(null);
   const { columns, rows } = useWindowSize();
   const { exit } = useApp();
 
@@ -48,6 +49,11 @@ export default function App(props: AppProps) {
       type: 'keyboard',
       data
     });
+  }, []);
+
+  const onAnswer = useCallback((answer: string) => {
+    setQuestion(null);
+    worker.current?.postMessage({ type: 'answer', answer });
   }, []);
 
   useEffect(() => {
@@ -91,6 +97,9 @@ export default function App(props: AppProps) {
           setRunning(message.running);
           setTurbo(message.turbo);
           break;
+        case 'question':
+          setQuestion(message.question);
+          break;
         case 'frame':
           const buffer = Buffer.from(
             message.buffer.buffer,
@@ -132,6 +141,8 @@ export default function App(props: AppProps) {
           onControl={onControl}
           running={running}
           turbo={turbo}
+          question={question}
+          onAnswer={onAnswer}
         />
       ) : (
         <Loading percent={percent} />

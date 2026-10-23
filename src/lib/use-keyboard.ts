@@ -2,14 +2,15 @@ import { useEffect, useRef } from 'react';
 import { useInput } from 'ink';
 
 export default function useKeyboard(
-  onKeyboard: (data: VM.KeyboardData) => void
+  onKeyboard: (data: VM.KeyboardData) => void,
+  isActive = true
 ) {
   const releases = useRef<
     Record<string, ReturnType<typeof setTimeout>>
   >({});
 
   useInput((input, key) => {
-    if (key.ctrl || key.meta || key.super || key.hyper) {
+    if (!isActive || key.ctrl || key.meta || key.super || key.hyper) {
       return;
     }
 
@@ -52,6 +53,6 @@ export default function useKeyboard(
         onKeyboard({ key, isDown: false });
       }
     },
-    [onKeyboard]
+    [onKeyboard, isActive]
   );
 }
