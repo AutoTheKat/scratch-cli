@@ -6,6 +6,7 @@ import type { HTMLCanvasElement as WebGLCanvas } from '@onirenaud/node-webgl';
 import { ProjectControl } from '../types.ts';
 import downloadProject from './download-project.ts';
 import loadRuntime from './load-runtime.ts';
+import queueAssetLoads from './queue-asset-loads.ts';
 
 if (!parentPort || typeof workerData?.input !== 'string') {
   throw new Error('Project worker requires a parent port and input.');
@@ -22,6 +23,9 @@ const captureContext = captureCanvas.getContext('2d');
 let previousPixels: Buffer | undefined;
 let running = false;
 let percent = 0;
+
+// Fix project loading from running out of memory.
+queueAssetLoads(vm.runtime);
 
 // Extensions can access ALL NodeJS internals so it's important that we do this.
 // Maybe one day we can have an isolated-vm instance to load extensions in, but for now this is easier.

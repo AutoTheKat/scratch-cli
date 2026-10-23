@@ -8,6 +8,10 @@ interface VM {
 }
 
 declare namespace VM {
+  interface Runtime {
+    wrapAssetRequest?<T>(request: () => Promise<T>): Promise<T>;
+  }
+
   interface RuntimeAndVirtualMachineEventMap {
     CREATE_UNSANDBOXED_EXTENSION_API: [scratch: object];
     ASSET_PROGRESS: [finished: number, total: number];
