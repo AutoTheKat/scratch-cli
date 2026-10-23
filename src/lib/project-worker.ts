@@ -20,6 +20,25 @@ let previousPixels: Buffer | undefined;
 let running = false;
 let percent = 0;
 
+// Extensions can access ALL NodeJS internals so it's important that we do this.
+// Maybe one day we can have an isolated-vm instance to load extensions in, but for now this is easier.
+vm.securityManager.canLoadExtensionFromProject = (url: string) => {
+  if (!url.startsWith('https://extensions.turbowarp.org/')) {
+    throw new Error(
+      `For security reasons, custom extensions that are not from the TurboWarp gallery (https://extensions.turbowarp.org/) cannot be loaded.`
+    );
+  }
+
+  return true;
+};
+
+vm.securityManager.getSandboxMode = () => 'unsandboxed';
+vm.on('CREATE_UNSANDBOXED_EXTENSION_API', (scratch) => {
+  Object.assign(window, {
+    Scratch: scratch
+  });
+});
+
 function startProject() {
   vm.start();
   vm.greenFlag();

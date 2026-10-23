@@ -16,6 +16,9 @@ const dom = new JSDOM(
 `,
   {
     resources: 'usable',
+    // Only code running in <script> tags are unsandboxed extensions
+    // from TurboWarp's gallery, which can be trusted.
+    runScripts: 'dangerously',
     pretendToBeVisual: true
   }
 );
@@ -24,6 +27,7 @@ const dom = new JSDOM(
 Object.assign(globalThis, {
   window: dom.window,
   document: dom.window.document,
+  location: dom.window.location,
 
   DOMParser: dom.window.DOMParser,
   XMLSerializer: dom.window.XMLSerializer,
