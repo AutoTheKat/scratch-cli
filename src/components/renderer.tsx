@@ -2,11 +2,11 @@ import { useRef, useState, useEffect } from 'react';
 import { useStdout, useWindowSize, Box, type DOMElement } from 'ink';
 import { usePosition, useTerminalInfo } from 'ink-picture';
 import FrameWriter from '../lib/frame-writer.ts';
-import type { ImageProtocol } from '../types.ts';
+import type { ImageProtocol, ProjectFrame } from '../types.ts';
 
 interface RendererProps {
   protocol: ImageProtocol;
-  imageBuffer: Buffer;
+  frame: ProjectFrame;
 }
 
 export default function Renderer(props: RendererProps) {
@@ -46,7 +46,7 @@ export default function Renderer(props: RendererProps) {
       return;
     }
     writer.current?.submit({
-      buffer: props.imageBuffer,
+      ...props.frame,
       row,
       column: position.col + 1,
       columns: position.width,
@@ -55,7 +55,7 @@ export default function Renderer(props: RendererProps) {
       cellHeight: terminal.cellHeight
     });
   }, [
-    props.imageBuffer,
+    props.frame,
     position,
     props.protocol,
     rows,

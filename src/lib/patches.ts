@@ -76,11 +76,11 @@ dom.window.HTMLCanvasElement.prototype.getContext = function (
 ) {
   switch (contextId) {
     case 'webgl':
-      return createWebGLContext(480, 360, {
+      return createWebGLContext(this.width, this.height, {
         version: 1
       });
     case 'webgl2':
-      return createWebGLContext(480, 360, {
+      return createWebGLContext(this.width, this.height, {
         version: 2
       });
   }

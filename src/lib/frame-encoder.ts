@@ -7,7 +7,6 @@ import {
 import { image2sixel } from 'sixel';
 import type { ImageProtocol, TerminalFrame } from '../types.ts';
 
-
 export default class FrameEncoder {
   private canvas: Canvas | undefined;
   private context: CanvasRenderingContext2D | undefined;
@@ -18,14 +17,12 @@ export default class FrameEncoder {
 
   encodeFrame(frame: TerminalFrame, imageId: number) {
     const { buffer, columns, rows, cellWidth, cellHeight } = frame;
-    const unit = Math.max(
-      1,
-      Math.floor(
-        Math.min((columns * cellWidth) / 4, (rows * cellHeight) / 3)
-      )
+    const scale = Math.min(
+      (columns * cellWidth) / frame.width,
+      (rows * cellHeight) / frame.height
     );
-    const width = unit * 4;
-    const height = unit * 3;
+    const width = Math.max(1, Math.floor(frame.width * scale));
+    const height = Math.max(1, Math.floor(frame.height * scale));
 
     if (this.protocol === 'sixel') {
       this.canvas ||= createCanvas(width, height);
@@ -85,7 +82,7 @@ export default class FrameEncoder {
         `\x1b_G${control}m=${more};${data.slice(offset, offset + 4096)}\x1b\\`
       );
     }
-    // Let the terminal derive the height from our 4:3 source image.
+    // Let the terminal derive the height from our source image.
     chunks.push(
       `\x1b_Ga=p,i=${imageId},p=1,c=${columns},C=1,q=2\x1b\\`
     );

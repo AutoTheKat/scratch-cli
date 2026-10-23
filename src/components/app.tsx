@@ -5,6 +5,7 @@ import Loading from './loading.tsx';
 import type {
   CLIFlags,
   ProjectControl,
+  ProjectFrame,
   WorkerMessage
 } from '../types.ts';
 
@@ -21,7 +22,7 @@ interface AppProps {
 
 export default function App(props: AppProps) {
   const worker = useRef<Worker | null>(null);
-  const [imageBuffer, setImageBuffer] = useState<Buffer | null>(null);
+  const [frame, setFrame] = useState<ProjectFrame | null>(null);
   const [percent, setPercent] = useState(0);
   const [running, setRunning] = useState(false);
   const [turbo, setTurbo] = useState(false);
@@ -96,8 +97,12 @@ export default function App(props: AppProps) {
             message.buffer.byteOffset,
             message.buffer.byteLength
           );
-          setImageBuffer(buffer);
-          // Fall-through
+          setFrame({
+            buffer,
+            width: message.width,
+            height: message.height
+          });
+        // Fall-through
         default:
           pending = false;
       }
@@ -119,9 +124,9 @@ export default function App(props: AppProps) {
 
   return (
     <Box width={columns} height={Math.max(1, rows - 1)}>
-      {imageBuffer ? (
+      {frame ? (
         <Player
-          imageBuffer={imageBuffer}
+          frame={frame}
           onMouse={onMouse}
           onKeyboard={onKeyboard}
           onControl={onControl}

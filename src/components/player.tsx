@@ -13,10 +13,14 @@ import Renderer from './renderer.tsx';
 import Controls from './controls.tsx';
 import calculateStageSize from '../lib/stage-size.ts';
 import useKeyboard from '../lib/use-keyboard.ts';
-import type { ProjectControl, ImageProtocol } from '../types.ts';
+import type {
+  ProjectControl,
+  ProjectFrame,
+  ImageProtocol
+} from '../types.ts';
 
 interface PlayerProps {
-  imageBuffer: Buffer;
+  frame: ProjectFrame;
   onMouse: (data: VM.MouseData) => void;
   onKeyboard: (data: VM.KeyboardData) => void;
   onControl: (control: ProjectControl) => void;
@@ -53,9 +57,19 @@ export default function Player(props: PlayerProps) {
         columns,
         rows - (protocol ? 2 : 3),
         terminal.cellWidth,
-        terminal.cellHeight
+        terminal.cellHeight,
+        props.frame.width,
+        props.frame.height
       ),
-    [columns, rows, protocol, terminal.cellWidth, terminal.cellHeight]
+    [
+      columns,
+      rows,
+      protocol,
+      terminal.cellWidth,
+      terminal.cellHeight,
+      props.frame.width,
+      props.frame.height
+    ]
   );
   useKeyboard(props.onKeyboard);
 
@@ -126,13 +140,10 @@ export default function Player(props: PlayerProps) {
           flexShrink={0}
         >
           {protocol ? (
-            <Renderer
-              imageBuffer={props.imageBuffer}
-              protocol={protocol}
-            />
+            <Renderer frame={props.frame} protocol={protocol} />
           ) : (
             <Image
-              src={props.imageBuffer}
+              src={props.frame.buffer}
               width="100%"
               height="100%"
               objectFit="contain"

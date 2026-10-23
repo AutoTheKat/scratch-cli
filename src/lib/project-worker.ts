@@ -14,7 +14,10 @@ if (!parentPort || typeof workerData?.input !== 'string') {
 const port = parentPort;
 const project = await loadRuntime(workerData.flags);
 const { vm } = project;
-const captureCanvas = createCanvas(480, 360);
+
+const captureCanvas = createCanvas(
+  ...vm.runtime.renderer.getNativeSize()
+);
 const captureContext = captureCanvas.getContext('2d');
 let previousPixels: Buffer | undefined;
 let running = false;
@@ -56,7 +59,10 @@ function reportProgress(value: number) {
 }
 
 function renderFrame() {
-  const canvas = vm.runtime.renderer.canvas as unknown as WebGLCanvas;
+  const renderer = vm.runtime.renderer;
+  renderer.resize(...renderer.getNativeSize());
+
+  const canvas = renderer.canvas as unknown as WebGLCanvas;
   const { data, width, height } = canvas.getImageData();
   const { buffer, byteOffset, byteLength } = data;
   const rgba = Buffer.from(buffer, byteOffset, byteLength);
@@ -77,7 +83,7 @@ function renderFrame() {
   previousPixels = rgba;
   // Use our own encoder to avoid the WebGL backend's JavaScript PNG filtering loop.
   const png = captureCanvas.toBuffer('image/png');
-  port.postMessage({ type: 'frame', buffer: png }, [
+  port.postMessage({ type: 'frame', buffer: png, width, height }, [
     png.buffer as ArrayBuffer
   ]);
 }
