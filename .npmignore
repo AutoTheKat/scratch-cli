@@ -1,0 +1,8 @@
+src/
+tests/
+.github/
+tsconfig.json
+.prettier*
+*.tgz
+*.env
+.env*
