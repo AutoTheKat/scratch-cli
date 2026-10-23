@@ -142,7 +142,7 @@ export default function Player(props: PlayerProps) {
         {!protocol && (
           <Box width="100%" justifyContent="center" flexShrink={0}>
             <Text dimColor wrap="truncate-end">
-              Use a terminal with image protocols for better quality.
+              Use a terminal with image support for better quality.
             </Text>
           </Box>
         )}
