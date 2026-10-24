@@ -5,7 +5,7 @@ Submit issues or suggestions [here](https://github.com/LordCat0/scratch-cli/issu
 
 
 ## Installation
-`npm i -g @lordcat0/scratch-cli`
+`npm i -g @lordcat/scratch-cli`
 
 ## Usage Examples
 - `scratch-cli ./project.sb3`
