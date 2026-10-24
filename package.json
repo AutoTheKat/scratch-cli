@@ -1,5 +1,5 @@
 {
-  "name": "@lordcat0/scratch-cli",
+  "name": "@lordcat/scratch-cli",
   "version": "0.0.0",
   "description": "Run Scratch projects in your terminal.",
   "keywords": [
