@@ -130,7 +130,7 @@ export default function App(props: AppProps) {
       projectWorker.unref();
     };
   }, [exit, props.input, props.flags]);
-
+  const debugtofalse = false
   return (
     <Box width={columns} height={Math.max(1, rows - 1)}>
       {frame ? (
@@ -143,10 +143,13 @@ export default function App(props: AppProps) {
           turbo={turbo}
           question={question}
           onAnswer={onAnswer}
+          textMode={debugtofalse}
         />
       ) : (
         <Loading percent={percent} />
       )}
     </Box>
+              // textMode={props.flags.text}
+
   );
 }

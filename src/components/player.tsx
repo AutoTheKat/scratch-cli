@@ -29,6 +29,7 @@ interface PlayerProps {
   turbo: boolean;
   question: string | null;
   onAnswer: (answer: string) => void;
+  textMode: boolean | undefined;
 }
 
 export default function Player(props: PlayerProps) {
@@ -45,16 +46,17 @@ export default function Player(props: PlayerProps) {
     'WarpTerminal',
     'WezTerm'
   ].includes(process.env.TERM_PROGRAM || '');
-  if (preferITerm && terminal.supportsITerm2Graphics) {
-    protocol = 'iterm2';
-  } else if (terminal.supportsKittyGraphics) {
-    protocol = 'kitty';
-  } else if (terminal.supportsITerm2Graphics) {
-    protocol = 'iterm2';
-  } else if (terminal.supportsSixelGraphics) {
-    protocol = 'sixel';
+  if (!props.textMode) {
+    if (preferITerm && terminal.supportsITerm2Graphics) {
+      protocol = 'iterm2';
+    } else if (terminal.supportsKittyGraphics) {
+      protocol = 'kitty';
+    } else if (terminal.supportsITerm2Graphics) {
+      protocol = 'iterm2';
+    } else if (terminal.supportsSixelGraphics) {
+      protocol = 'sixel';
+    }
   }
-
   const stage = useMemo(
     () =>
       calculateStageSize(
@@ -165,9 +167,13 @@ export default function Player(props: PlayerProps) {
               objectFit="contain"
             />
           )}
-        </Box>
+        </Box>  
         {asking && (
-          <Box width={stage.width} justifyContent="center" flexShrink={0}>
+          <Box
+            width={stage.width}
+            justifyContent="center"
+            flexShrink={0}
+          >
             <TextInput
               key={props.question}
               placeholder={props.question || 'Answer...'}

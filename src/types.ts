@@ -2,6 +2,7 @@ export interface CLIFlags {
   vm?: string;
   renderer?: string;
   storage?: string;
+  text?: boolean;
 }
 
 export type WorkerMessage =

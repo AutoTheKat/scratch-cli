@@ -19,3 +19,5 @@ You can also write `scr` instead of `scratch-cli`.
 - `--vm=<path>` - Custom VM path
 - `--renderer=<path>` - Custom Renderer path
 - `--storage=<path>` - Custom Storage path
+
+## Known problems
